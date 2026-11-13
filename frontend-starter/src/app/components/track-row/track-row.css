@@ -1,0 +1,266 @@
+/* ==========================================================================
+   Une ligne de la bibliothèque — une fiche d'archive, pas une carte flottante.
+   Quatre colonnes sur grand écran : lecture · identité · chiffres · actions.
+   ========================================================================== */
+
+:host {
+  display: block;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.row:hover { border-color: var(--line-strong); }
+
+/* Piste en cours : un filet d'accent à gauche, un fond très léger, et le
+   badge textuel du titre. Trois signaux, dont deux non colorés. */
+.row.is-current {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* ------------------------------------------------------ Bouton lecture --- */
+.play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.play:hover:not(:disabled) {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.row.is-current .play {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------- Identité --- */
+.identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--step-0);
+}
+
+/* Le titre peut être long : il se coupe plutôt que de pousser les chiffres. */
+.title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.playing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+  color: var(--accent);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.filename {
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------- Étiquettes --- */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent-2-soft);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.tag-pick,
+.tag-drop,
+.tag-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.45rem;
+  color: var(--accent-2);
+  background: none;
+  border: none;
+  font-size: var(--step--2);
+  font-weight: 500;
+}
+
+.tag-pick:hover { background: rgb(var(--ink-channel) / 0.07); }
+
+.tag-drop {
+  padding-inline: 0.3rem 0.4rem;
+  color: var(--ink-faint);
+}
+
+.tag-drop:hover { color: var(--danger); }
+
+/* Le bouton d'ajout reste discret : il ne doit pas concurrencer les actions
+   de droite, qui sont les vraies commandes de la ligne. */
+.tag-add {
+  color: var(--ink-faint);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-pill);
+}
+
+.tag-add:hover {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.tag-input {
+  width: 9rem;
+  padding: 0.1rem 0.45rem;
+  font-size: var(--step--2);
+}
+
+/* ------------------------------------------------------------ Chiffres --- */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ------------------------------------------------------------- Actions --- */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.actions .icon-btn {
+  width: 32px;
+  height: 32px;
+}
+
+/* L'action destructrice n'est rouge qu'au survol : au repos elle ne doit pas
+   attirer l'œil plus que « lire » ou « ajouter à la file ». */
+.actions .icon-btn.danger:hover:not(:disabled) {
+  color: var(--danger-ink);
+  background: var(--danger);
+}
+
+.confirm {
+  gap: var(--sp-2);
+}
+
+.confirm-text {
+  color: var(--danger);
+  font-size: var(--step--1);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------- Égaliseur animé (badge) --- */
+.eq-animation {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+
+.eq-animation i {
+  width: 2.5px;
+  height: 35%;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.eq-animation.is-animating i {
+  animation: bounce 0.9s ease-in-out infinite;
+}
+
+.eq-animation.is-animating i:nth-child(2) { animation-delay: 0.15s; }
+.eq-animation.is-animating i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+  0%, 100% { height: 30%; }
+  50% { height: 100%; }
+}
+
+/* ========================================================= Adaptations === */
+
+/* Sous 1000 px, les chiffres passent sous l'identité : ils restent lisibles
+   et la ligne ne se comprime pas jusqu'à l'illisible. */
+@media (max-width: 1000px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: var(--sp-2);
+  }
+
+  .facts {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 620px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,86 @@
+<!-- ============================ Chiffres clés ============================
+     Des tuiles, pas un graphique : quatre valeurs indépendantes se lisent
+     plus vite en chiffres qu'en barres. Le premier nombre est le chiffre
+     vedette de la page — il n'y en a qu'un.
+     ===================================================================== -->
+<dl class="tiles">
+  <div class="tile tile-hero">
+    <dt>Pistes dans la bibliothèque</dt>
+    <dd class="hero">{{ formatCount(store.total()) }}</dd>
+  </div>
+
+  <div class="tile">
+    <dt>Poids cumulé</dt>
+    <dd>{{ formatSize(store.loadedSize()) }}</dd>
+  </div>
+
+  <div class="tile">
+    <dt>Écoutes</dt>
+    <dd>{{ formatCount(store.totalPlays()) }}</dd>
+  </div>
+
+  <div class="tile">
+    <dt>Favoris</dt>
+    <dd>{{ formatCount(store.favoriteCount()) }}</dd>
+  </div>
+</dl>
+
+<!-- ======================= Répartition par format ======================= -->
+<section class="breakdown" aria-labelledby="breakdown-title">
+  <h3 id="breakdown-title">Répartition par format</h3>
+
+  @if (slices().length > 0) {
+    <!-- Barre empilée. Chaque part porte un `title` : au survol, le détail
+         sans quitter la vue. L'ensemble est décoratif puisque la légende
+         ci-dessous donne les mêmes valeurs en texte. -->
+    <div class="meter" aria-hidden="true">
+      @for (slice of slices(); track slice.label) {
+        <span
+          class="slice"
+          [style.flex-grow]="slice.count"
+          [style.background]="slice.color"
+          [title]="slice.label + ' · ' + slice.count + ' piste(s) · ' + slice.percent + ' %'"
+        ></span>
+      }
+    </div>
+
+    <!-- Légende : elle est toujours présente dès deux séries, et elle tient
+         aussi le rôle de vue tabulaire — nom, nombre, pourcentage. -->
+    <ul class="legend" role="list">
+      @for (slice of slices(); track slice.label) {
+        <li>
+          <span class="swatch" [style.background]="slice.color" aria-hidden="true"></span>
+          <span class="legend-label">{{ slice.label }}</span>
+          <span class="legend-value num">{{ slice.count }}</span>
+          <span class="legend-share num">{{ slice.percent }} %</span>
+        </li>
+      }
+      @if (otherCount() > 0) {
+        <li>
+          <span class="swatch swatch-other" aria-hidden="true"></span>
+          <span class="legend-label">Autre</span>
+          <span class="legend-value num">{{ otherCount() }}</span>
+          <span class="legend-share num">—</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="empty-note">Aucune piste chargée : rien à répartir pour le moment.</p>
+  }
+
+  <!-- Portée des chiffres, annoncée explicitement : en pagination serveur,
+       seules les pistes de la page courante sont en mémoire. Dire sur quoi
+       porte un chiffre vaut mieux que de laisser croire qu'il couvre tout. -->
+  <p class="scope">
+    <app-icon name="filter" [size]="12" />
+    @if (store.mode() === 'all') {
+      Calculé sur la bibliothèque complète ({{ sampleSize() }} piste(s)).
+    } @else {
+      Calculé sur la page affichée ({{ sampleSize() }} piste(s) sur
+      {{ store.total() }}).
+      <button type="button" class="link-btn" (click)="store.loadAll()">
+        Tout charger
+      </button>
+    }
+  </p>
+</section>

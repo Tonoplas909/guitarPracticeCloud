@@ -1,0 +1,127 @@
+/* ==========================================================================
+   Coquille applicative : barre de titre, navigation, outils.
+   ========================================================================== */
+
+/* Barre collante, avec un filet en bas plutôt qu'une ombre : on reste dans
+   la logique du papier. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(12px) saturate(1.1);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: var(--sp-3) var(--sp-5);
+}
+
+/* ------------------------------------------------------------- Marque --- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand:hover { color: var(--ink); }
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--ink);
+  transition: transform 0.4s ease;
+}
+
+/* Le disque tourne d'un quart de tour au survol : un seul clin d'œil animé
+   dans toute l'interface. */
+.brand:hover .brand-mark { transform: rotate(90deg); }
+
+.brand-text {
+  display: grid;
+  gap: 0;
+}
+
+.brand-text b {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 24;
+}
+
+.brand-text small {
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+}
+
+/* --------------------------------------------------------- Navigation --- */
+nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+}
+
+nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0.4rem 0.7rem;
+  color: var(--ink-muted);
+  border-radius: var(--r-sm);
+  font-size: var(--step--1);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+nav a:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+/* L'onglet courant : encre pleine, fond, ET un filet sous le libellé. Trois
+   signaux, pour ne pas dépendre de la seule couleur. */
+nav a.is-active {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ------------------------------------------------------------- Outils --- */
+.topbar-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* ========================================================= Adaptations === */
+@media (max-width: 860px) {
+  .topbar-inner {
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-4);
+  }
+
+  /* La signature de la marque disparaît avant le nom lui-même. */
+  .brand-text small { display: none; }
+
+  nav a span { display: none; }
+
+  nav a { padding: 0.45rem; }
+
+  .label-wide { display: none; }
+}
+
+@media (max-width: 420px) {
+  .brand-text b { font-size: var(--step-0); }
+}

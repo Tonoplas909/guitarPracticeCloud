@@ -1,0 +1,172 @@
+<article
+  class="row"
+  [class.is-current]="isCurrent()"
+  [attr.aria-current]="isCurrent() ? 'true' : null"
+>
+  <!-- --------------------------- Bouton lecture --------------------------- -->
+  <button
+    type="button"
+    class="play"
+    (click)="play.emit(track())"
+    [disabled]="isLoading()"
+    [attr.aria-label]="
+      isCurrent() && isPlaying() ? 'Mettre en pause ' + track().title : 'Lire ' + track().title
+    "
+  >
+    @if (isLoading()) {
+      <span class="spinner" aria-hidden="true"></span>
+    } @else if (isCurrent() && isPlaying()) {
+      <app-icon name="pause" [size]="16" />
+    } @else {
+      <app-icon name="play" [size]="16" />
+    }
+  </button>
+
+  <!-- ------------------------------ Identité ------------------------------ -->
+  <div class="identity">
+    <h3 class="title">
+      {{ track().title }}
+      @if (isCurrent()) {
+        <!-- L'état « en lecture » est porté par un texte et une animation, pas
+             seulement par la couleur de la ligne. -->
+        <span class="playing-badge">
+          <span class="eq-animation" [class.is-animating]="isPlaying()" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </span>
+          {{ isPlaying() ? 'En lecture' : 'En pause' }}
+        </span>
+      }
+    </h3>
+    <p class="filename">{{ track().originalName }}</p>
+
+    <!-- Étiquettes locales : cliquables pour filtrer la bibliothèque. -->
+    <div class="tags">
+      @for (tag of tags(); track tag) {
+        <span class="tag">
+          <button
+            type="button"
+            class="tag-pick"
+            (click)="tagSelected.emit(tag)"
+            [attr.aria-label]="'Filtrer sur l’étiquette ' + tag"
+          >
+            <app-icon name="tag" [size]="11" />
+            {{ tag }}
+          </button>
+          <button
+            type="button"
+            class="tag-drop"
+            (click)="removeTag(tag)"
+            [attr.aria-label]="'Retirer l’étiquette ' + tag"
+          >
+            <app-icon name="close" [size]="11" />
+          </button>
+        </span>
+      }
+
+      @if (tagging()) {
+        <!-- `autofocus` ne suffirait pas sur un élément créé dynamiquement :
+             Angular rend le champ après coup. On s'appuie donc sur l'attribut
+             natif, pris en compte à l'insertion dans le document. -->
+        <input
+          #tagInput
+          class="tag-input"
+          type="text"
+          autofocus
+          maxlength="24"
+          placeholder="étiquette…"
+          aria-label="Nouvelle étiquette"
+          (keydown.enter)="addTag(tagInput)"
+          (keydown.escape)="tagging.set(false)"
+          (blur)="addTag(tagInput)"
+        />
+      } @else {
+        <button
+          type="button"
+          class="tag-add"
+          (click)="tagging.set(true)"
+          [attr.aria-label]="'Ajouter une étiquette à ' + track().title"
+        >
+          <app-icon name="plus" [size]="11" />
+          étiquette
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ------------------------------- Chiffres ----------------------------- -->
+  <ul class="facts" role="list">
+    <li class="chip">{{ formatAudioType(track().mimeType) }}</li>
+    <li class="chip num">{{ formatSize(track().size) }}</li>
+    <li class="chip">{{ formatDate(track().createdAt) }}</li>
+    @if (plays() > 0) {
+      <li class="chip" [title]="'Dernière écoute : ' + formatRelativeDate(localMeta()?.lastPlayedAt ?? null)">
+        <app-icon name="clock" [size]="11" />
+        <span class="num">{{ plays() }}</span>
+      </li>
+    }
+  </ul>
+
+  <!-- ------------------------------- Actions ------------------------------ -->
+  @if (confirming()) {
+    <div class="actions confirm" role="group" [attr.aria-label]="'Confirmer la suppression de ' + track().title">
+      <span class="confirm-text">Supprimer ?</span>
+      <button type="button" class="btn btn-sm" (click)="cancelDelete()" [disabled]="isDeleting()">
+        Annuler
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-danger"
+        (click)="confirmDelete()"
+        [disabled]="deleteLocked()"
+      >
+        {{ isDeleting() ? 'Suppression…' : 'Confirmer' }}
+      </button>
+    </div>
+  } @else {
+    <div class="actions">
+      <button
+        type="button"
+        class="icon-btn"
+        [class.is-on]="favorite()"
+        (click)="toggleFavorite()"
+        [attr.aria-pressed]="favorite()"
+        [attr.aria-label]="
+          (favorite() ? 'Retirer des favoris : ' : 'Ajouter aux favoris : ') + track().title
+        "
+      >
+        <app-icon name="heart" [solid]="favorite()" [size]="16" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="enqueue.emit(track())"
+        [attr.aria-label]="'Ajouter ' + track().title + ' à la file'"
+        title="Ajouter à la file d'attente"
+      >
+        <app-icon name="plus" [size]="16" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="download.emit(track())"
+        [attr.aria-label]="'Télécharger ' + track().title"
+        title="Télécharger"
+      >
+        <app-icon name="download" [size]="16" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn danger"
+        (click)="askDelete()"
+        [disabled]="deleteLocked()"
+        [attr.aria-label]="'Supprimer ' + track().title"
+        title="Supprimer"
+      >
+        <app-icon name="trash" [size]="16" />
+      </button>
+    </div>
+  }
+</article>

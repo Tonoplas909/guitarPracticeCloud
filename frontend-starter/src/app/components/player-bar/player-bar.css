@@ -1,0 +1,308 @@
+/* ==========================================================================
+   Barre de lecture fixée en bas d'écran.
+
+   L'espace qu'elle occupe est réservé par le `padding-bottom` de `main`
+   (voir styles.css) à partir de la variable `--player-h` : une seule source
+   de vérité pour la hauteur, redéfinie une fois sous 900 px où la barre passe
+   sur deux lignes.
+   ========================================================================== */
+
+:host {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  display: block;
+  /* Le flou laisse devenir le papier derrière la barre sans le cacher. */
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 24px -18px rgb(var(--ink-channel) / 0.4);
+}
+
+.bar {
+  display: grid;
+  grid-template-areas: 'identity buttons scrub tools';
+  grid-template-columns: minmax(170px, 1fr) auto minmax(200px, 2.2fr) auto;
+  align-items: center;
+  gap: var(--sp-4);
+  max-width: 1240px;
+  min-height: var(--player-h);
+  margin: 0 auto;
+  padding: var(--sp-2) var(--sp-5);
+}
+
+/* État vide : les commandes restent en place mais s'effacent. */
+.bar.is-idle .meta,
+.bar.is-idle .scrub {
+  opacity: 0.6;
+}
+
+/* --------------------------------------------------------------- Piste --- */
+.identity {
+  grid-area: identity;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.art {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 50px;
+  height: 50px;
+  color: var(--ink-faint);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Le disque tourne pendant la lecture. 8 s par tour : assez lent pour ne pas
+   capter l'attention, assez visible pour signaler que ça joue. */
+.art.is-spinning { animation: spin 8s linear infinite; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.art app-visualizer { width: 50px; }
+
+.meta {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  font-size: var(--step-0);
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sub {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: var(--step--2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fav { flex: none; }
+
+/* ----------------------------------------------------------- Transport --- */
+.buttons {
+  grid-area: buttons;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* Le bouton lecture est le seul élément plein de la barre : c'est l'action
+   que l'œil doit trouver sans chercher. */
+.play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  margin-inline: var(--sp-1);
+  padding: 0;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  transition: background-color 0.15s, transform 0.08s;
+}
+
+.play:hover:not(:disabled) { background: var(--accent-strong); }
+.play:active:not(:disabled) { transform: scale(0.96); }
+.play:disabled { opacity: 0.4; }
+
+.spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ------------------------------------------------------- Forme d'onde --- */
+.scrub {
+  grid-area: scrub;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.time {
+  /* Largeur réservée : le chronomètre ne doit pas pousser la forme d'onde
+     quand il passe de 0:59 à 1:00. */
+  min-width: 4ch;
+  color: var(--ink-muted);
+  font-size: var(--step--2);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------ Réglages --- */
+.tools {
+  grid-area: tools;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-1);
+}
+
+.loop-chip {
+  gap: 0.3rem;
+  border: 1px solid transparent;
+  font-size: var(--step--2);
+}
+
+.loop-chip:hover { border-color: var(--accent); }
+
+.rate select {
+  width: auto;
+  padding: 0.3rem 0.4rem;
+  color: var(--ink-muted);
+  background: transparent;
+  border-color: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+}
+
+.rate select:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* Curseur de volume : rail fin, poignée ronde, aux couleurs du thème.
+   Les deux familles de pseudo-éléments (WebKit et Firefox) sont déclarées
+   séparément : un sélecteur inconnu invaliderait toute la règle. */
+.volume input[type='range'] {
+  width: 76px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.volume input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: var(--r-pill);
+}
+
+.volume input[type='range']::-webkit-slider-thumb {
+  width: 13px;
+  height: 13px;
+  margin-top: -4.5px;
+  background: var(--ink);
+  border: none;
+  border-radius: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.volume input[type='range']::-moz-range-track {
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: var(--r-pill);
+}
+
+.volume input[type='range']::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  background: var(--ink);
+  border: none;
+  border-radius: 50%;
+}
+
+.volume input[type='range']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--r-pill);
+}
+
+/* -------------------------------------------------------------- Erreur --- */
+.bar-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 var(--sp-5) var(--sp-2);
+  color: var(--danger);
+  font-size: var(--step--1);
+}
+
+/* L'élément audio n'a pas d'attribut `controls` : il ne doit jamais occuper
+   de place dans la mise en page. */
+audio { display: none; }
+
+/* ==========================================================================
+   Adaptations
+
+   Une seule règle gouverne le dégraissage : la classe `.secondary` marque
+   tout ce qui peut disparaître quand la place manque. Les commandes
+   essentielles — piste, lecture, position — ne sont jamais masquées.
+   ========================================================================== */
+
+@media (max-width: 1140px) {
+  .rate,
+  .loop-chip {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Deux lignes : la forme d'onde prend toute la largeur en haut, le reste
+     s'aligne en dessous. */
+  .bar {
+    grid-template-areas:
+      'scrub scrub scrub'
+      'identity buttons tools';
+    grid-template-columns: 1fr auto auto;
+    gap: var(--sp-2) var(--sp-3);
+    padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  }
+
+  .secondary { display: none; }
+
+  .art {
+    width: 40px;
+    height: 40px;
+  }
+
+  .art app-visualizer { width: 40px; }
+
+  .play {
+    width: 38px;
+    height: 38px;
+    margin: 0;
+  }
+
+  .scrub {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* Les chronomètres restent lisibles dans la scène et la bibliothèque ;
+     ici la forme d'onde seule suffit. */
+  .scrub .time { display: none; }
+}

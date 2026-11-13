@@ -1,0 +1,144 @@
+<header class="page-head">
+  <p class="eyebrow">Mon compte</p>
+  <h1>Profil</h1>
+  <p class="lede">
+    Votre identité, et ce que l'application retient — sur le serveur comme dans
+    ce navigateur.
+  </p>
+</header>
+
+<div class="columns">
+  <!-- ============================== Identité ============================== -->
+  <section class="sheet sheet-pad" aria-labelledby="identity-title">
+    <h2 id="identity-title" class="section-title">Identité</h2>
+
+    @if (auth.currentUser(); as user) {
+      <div class="identity">
+        <!-- Initiale en guise d'avatar : rien à télécharger, et le contraste
+             est maîtrisé puisque c'est du texte sur une surface connue. -->
+        <span class="avatar" aria-hidden="true">{{ initial() }}</span>
+        <div class="identity-text">
+          <b>{{ user.name }}</b>
+          <small>{{ user.email }}</small>
+          <small class="since">Membre depuis le {{ formatDate(user.createdAt) }}</small>
+        </div>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <label class="field" for="profile-name">
+          Nom affiché
+          <input id="profile-name" formControlName="name" autocomplete="name" />
+          @if (form.controls.name.invalid && form.controls.name.touched) {
+            <span class="field-error">Nom requis</span>
+          } @else {
+            <span class="field-hint">
+              C'est le seul champ que le contrat HTTP permet de modifier.
+            </span>
+          }
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) {
+              Enregistrement…
+            } @else {
+              Enregistrer
+            }
+          </button>
+          <button type="button" class="btn" (click)="load()">
+            <app-icon name="refresh" [size]="14" />
+            Recharger
+          </button>
+        </div>
+      </form>
+    } @else if (loadFailed()) {
+      <p class="notice notice-error" role="alert">
+        <app-icon name="alert" [size]="16" />
+        Impossible de charger le profil.
+      </p>
+      <button type="button" class="btn" (click)="load()">Réessayer</button>
+    } @else {
+      <p class="lede" role="status">Chargement du profil…</p>
+    }
+  </section>
+
+  <div class="side-column">
+    <!-- ============================= Apparence ============================ -->
+    <section class="sheet sheet-pad" aria-labelledby="theme-title">
+      <h2 id="theme-title" class="section-title">Apparence</h2>
+      <p class="hint">
+        Deux thèmes complets : papier le jour, encre la nuit. Le choix est
+        retenu dans ce navigateur.
+      </p>
+
+      <div class="theme-choices" role="group" aria-label="Choix du thème">
+        @for (choice of themes; track choice.value) {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.is-active]="theme.choice() === choice.value"
+            [attr.aria-pressed]="theme.choice() === choice.value"
+            (click)="theme.select(choice.value)"
+          >
+            <app-icon [name]="choice.icon" [size]="14" />
+            {{ choice.label }}
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- =========================== Données locales ========================= -->
+    <section class="sheet sheet-pad" aria-labelledby="local-title">
+      <h2 id="local-title" class="section-title">Données de ce navigateur</h2>
+      <p class="hint">
+        Favoris, étiquettes et compteurs d'écoute n'ont pas de route dans l'API
+        du projet : ils sont donc enregistrés ici, dans ce navigateur. Ils ne
+        suivent pas d'un appareil à l'autre, et vider les données du site les
+        efface.
+      </p>
+
+      <dl class="local-stats">
+        <div>
+          <dt>Pistes annotées</dt>
+          <dd class="num">{{ localCount() }}</dd>
+        </div>
+        <div>
+          <dt>Favoris</dt>
+          <dd class="num">{{ localFavorites() }}</dd>
+        </div>
+        <div>
+          <dt>Étiquettes</dt>
+          <dd class="num">{{ localTags() }}</dd>
+        </div>
+        <div>
+          <dt>Écoutes</dt>
+          <dd class="num">{{ localPlays() }}</dd>
+        </div>
+      </dl>
+
+      <!-- Action irréversible : confirmation en deux temps, comme pour la
+           suppression d'une piste. -->
+      @if (confirmingWipe()) {
+        <div class="wipe-confirm" role="group" aria-label="Confirmer l’effacement">
+          <span class="confirm-text">Effacer définitivement ?</span>
+          <button type="button" class="btn btn-sm" (click)="confirmingWipe.set(false)">
+            Annuler
+          </button>
+          <button type="button" class="btn btn-sm btn-danger" (click)="wipeLocalData()">
+            Confirmer
+          </button>
+        </div>
+      } @else {
+        <button
+          type="button"
+          class="btn btn-sm btn-danger"
+          [disabled]="localCount() === 0"
+          (click)="confirmingWipe.set(true)"
+        >
+          <app-icon name="trash" [size]="14" />
+          Effacer les données locales
+        </button>
+      }
+    </section>
+  </div>
+</div>

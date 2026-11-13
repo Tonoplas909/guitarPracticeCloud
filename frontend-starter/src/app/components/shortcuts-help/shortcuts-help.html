@@ -1,0 +1,71 @@
+<button type="button" class="veil" (click)="close.emit()" tabindex="-1" aria-hidden="true"></button>
+
+<div class="panel">
+  <header class="head">
+    <div>
+      <p class="eyebrow">Aide</p>
+      <h2>Raccourcis &amp; apparence</h2>
+    </div>
+    <button
+      #closeButton
+      type="button"
+      class="icon-btn"
+      (click)="close.emit()"
+      aria-label="Fermer l’aide"
+      title="Fermer (Échap)"
+    >
+      <app-icon name="close" />
+    </button>
+  </header>
+
+  <!-- ============================= Apparence ============================= -->
+  <section class="theme" aria-labelledby="help-theme">
+    <h3 id="help-theme">Thème</h3>
+    <div class="theme-choices" role="group" aria-label="Choix du thème">
+      @for (choice of themes; track choice.value) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.is-active]="theme.choice() === choice.value"
+          [attr.aria-pressed]="theme.choice() === choice.value"
+          (click)="theme.select(choice.value)"
+        >
+          <app-icon [name]="choice.icon" [size]="14" />
+          {{ choice.label }}
+        </button>
+      }
+    </div>
+    <p class="theme-hint">
+      « Système » suit le réglage de votre appareil et change avec lui.
+    </p>
+  </section>
+
+  <!-- ============================ Raccourcis ============================= -->
+  <div class="groups">
+    <!-- L'identifiant est construit sur l'index et non sur le titre : un
+         `aria-labelledby` ne peut pas contenir d'espace, qui y sépare
+         plusieurs identifiants. -->
+    @for (group of groups; track group.title; let groupIndex = $index) {
+      <section [attr.aria-labelledby]="'help-group-' + groupIndex">
+        <h3 [id]="'help-group-' + groupIndex">{{ group.title }}</h3>
+        <dl class="list">
+          @for (shortcut of group.items; track shortcut.label + shortcut.keys[0]) {
+            <div class="line">
+              <dt>
+                @for (key of shortcut.keys; track key) {
+                  <kbd>{{ key }}</kbd>
+                }
+              </dt>
+              <dd>{{ shortcut.label }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+    }
+  </div>
+
+  <p class="foot">
+    Les raccourcis sont inactifs pendant la saisie dans un champ. Les flèches
+    haut et bas restent au défilement de la page.
+  </p>
+</div>

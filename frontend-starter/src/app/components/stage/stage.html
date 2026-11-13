@@ -1,0 +1,342 @@
+<!-- Voile : il assombrit la page sans la masquer complètement. Le clic dessus
+     referme, comme dans toute boîte de dialogue. -->
+<button type="button" class="veil" (click)="player.closeStage()" tabindex="-1" aria-hidden="true"></button>
+
+<div class="panel">
+  <header class="head">
+    <p class="eyebrow">Lecture en cours</p>
+    <button
+      #closeButton
+      type="button"
+      class="icon-btn"
+      (click)="player.closeStage()"
+      aria-label="Fermer la scène"
+      title="Fermer (Échap)"
+    >
+      <app-icon name="collapse" />
+    </button>
+  </header>
+
+  @if (player.current(); as track) {
+    <div class="stage-grid">
+      <!-- ==================== Colonne gauche : la lecture ==================== -->
+      <section class="now" aria-label="Piste en cours">
+        <!-- Le visualiseur en grand : c'est le sujet de cette vue. Le disque
+             tourne pendant la lecture. -->
+        <div class="disc" [class.is-spinning]="player.isPlaying()">
+          @if (engine.available()) {
+            <app-visualizer
+              [mode]="player.visualizerMode()"
+              [height]="300"
+              [barWidth]="10"
+              [playing]="player.isPlaying()"
+            />
+          } @else {
+            <!-- Sans Web Audio, le disque reste, le spectre disparaît : la
+                 lecture n'est pas affectée. -->
+            <app-icon name="disc" [size]="92" />
+          }
+        </div>
+
+        <div class="now-meta">
+          <h2>{{ track.title }}</h2>
+          <p class="now-sub">
+            <span class="chip">{{ formatAudioType(track.mimeType) }}</span>
+            <span class="chip">{{ formatSize(track.size) }}</span>
+            <span class="chip">
+              <app-icon name="clock" [size]="12" />
+              <span class="num">{{ formatTime(player.duration()) }}</span>
+            </span>
+            @if (playsCount(track.id) > 0) {
+              <span class="chip">
+                <span class="num">{{ playsCount(track.id) }}</span> écoute(s)
+              </span>
+            }
+          </p>
+        </div>
+
+        <!-- Chronomètre en gros chiffres monospace : lisible à distance, et
+             surtout stable — aucun caractère ne décale les autres. -->
+        <p class="clock num">
+          {{ formatTime(player.currentTime()) }}
+          <span class="clock-total">/ {{ formatTime(player.duration()) }}</span>
+        </p>
+
+        <app-waveform
+          [peaks]="player.peaks()"
+          [currentTime]="player.currentTime()"
+          [duration]="player.duration()"
+          [loopStart]="player.loopStart()"
+          [loopEnd]="player.loopEnd()"
+          [disabled]="player.duration() === 0"
+          [height]="72"
+          (seekTo)="player.seekToRatio($event)"
+        />
+
+        @if (player.analysing()) {
+          <p class="analysing" role="status">Analyse de la forme d'onde…</p>
+        }
+
+        <div class="controls">
+          <button
+            type="button"
+            class="icon-btn"
+            [class.is-on]="player.shuffle()"
+            (click)="player.toggleShuffle()"
+            [attr.aria-pressed]="player.shuffle()"
+            aria-label="Lecture aléatoire"
+          >
+            <app-icon name="shuffle" [size]="20" />
+          </button>
+
+          <button
+            type="button"
+            class="icon-btn"
+            [disabled]="!player.canGoPrevious()"
+            (click)="player.previous()"
+            aria-label="Piste précédente"
+          >
+            <app-icon name="skip-back" [size]="22" />
+          </button>
+
+          <button
+            type="button"
+            class="play"
+            (click)="player.toggle()"
+            [attr.aria-label]="player.isPlaying() ? 'Mettre en pause' : 'Reprendre la lecture'"
+          >
+            @if (player.isPlaying()) {
+              <app-icon name="pause" [size]="26" />
+            } @else {
+              <app-icon name="play" [size]="26" />
+            }
+          </button>
+
+          <button
+            type="button"
+            class="icon-btn"
+            [disabled]="!player.canGoNext()"
+            (click)="player.next(true)"
+            aria-label="Piste suivante"
+          >
+            <app-icon name="skip-forward" [size]="22" />
+          </button>
+
+          <button
+            type="button"
+            class="icon-btn"
+            [class.is-on]="player.repeat() !== 'off'"
+            (click)="player.cycleRepeat()"
+            [attr.aria-label]="repeatLabels[player.repeat()]"
+            [title]="repeatLabels[player.repeat()]"
+          >
+            <app-icon [name]="player.repeat() === 'one' ? 'repeat-one' : 'repeat'" [size]="20" />
+          </button>
+        </div>
+
+        <div class="quick">
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.is-active]="isFavorite(track.id)"
+            (click)="toggleFavorite(track.id)"
+            [attr.aria-pressed]="isFavorite(track.id)"
+          >
+            <app-icon name="heart" [size]="14" [solid]="isFavorite(track.id)" />
+            {{ isFavorite(track.id) ? 'Favori' : 'Ajouter aux favoris' }}
+          </button>
+
+          <button type="button" class="btn btn-sm" (click)="player.downloadCurrent()">
+            <app-icon name="download" [size]="14" />
+            Télécharger
+          </button>
+        </div>
+      </section>
+
+      <!-- ================== Colonne droite : les outils ==================== -->
+      <div class="tools">
+        <!-- ----------------------- Boucle A → B ------------------------ -->
+        <section class="tool" aria-labelledby="stage-loop">
+          <h3 id="stage-loop">
+            <app-icon name="loop" [size]="15" />
+            Boucle A → B
+          </h3>
+          <p class="tool-hint">
+            Posez deux repères pour rejouer en continu le passage à travailler.
+          </p>
+
+          <div class="loop-actions">
+            <button type="button" class="btn btn-sm" (click)="player.markLoopStart()">
+              Point A
+              @if (player.loopStart() !== null) {
+                <span class="num">{{ formatTime(player.loopStart() ?? 0) }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [disabled]="player.loopStart() === null"
+              (click)="player.markLoopEnd()"
+            >
+              Point B
+              @if (player.loopEnd() !== null) {
+                <span class="num">{{ formatTime(player.loopEnd() ?? 0) }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-danger"
+              [disabled]="player.loopStart() === null && player.loopEnd() === null"
+              (click)="player.clearLoop()"
+            >
+              Effacer
+            </button>
+          </div>
+
+          @if (player.hasLoop()) {
+            <p class="notice notice-ok" role="status">
+              Boucle active :
+              <span class="num">
+                {{ formatTime(player.loopStart() ?? 0) }} → {{ formatTime(player.loopEnd() ?? 0) }}
+              </span>
+            </p>
+          }
+        </section>
+
+        <!-- ------------------------- Vitesse --------------------------- -->
+        <section class="tool" aria-labelledby="stage-rate">
+          <h3 id="stage-rate">
+            <app-icon name="speed" [size]="15" />
+            Vitesse
+            <span class="tool-value num">{{ formatRate(player.rate()) }}</span>
+          </h3>
+          <p class="tool-hint">La hauteur des notes est préservée : rien ne se désaccorde.</p>
+
+          <input
+            class="slider"
+            type="range"
+            min="0.5"
+            max="1.5"
+            step="0.05"
+            [value]="player.rate()"
+            (input)="onRateChange($event)"
+            aria-label="Vitesse de lecture"
+          />
+
+          <div class="presets">
+            @for (rate of rates; track rate) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.is-active]="player.rate() === rate"
+                (click)="player.setRate(rate)"
+              >
+                {{ formatRate(rate) }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- ------------------------ Égaliseur -------------------------- -->
+        <section class="tool" aria-labelledby="stage-eq">
+          <h3 id="stage-eq">
+            <app-icon name="equalizer" [size]="15" />
+            Égaliseur
+          </h3>
+
+          @if (engine.available()) {
+            <p class="tool-hint">
+              Creusez les médiums pour vous entendre jouer par-dessus la piste.
+            </p>
+
+            @for (band of bands; track band.key) {
+              <label class="eq-row">
+                <span class="eq-label">
+                  {{ band.label }}
+                  <small>{{ band.hint }}</small>
+                </span>
+                <input
+                  class="slider"
+                  type="range"
+                  min="-12"
+                  max="12"
+                  step="1"
+                  [value]="engine.eq()[band.key]"
+                  (input)="onEqChange(band.key, $event)"
+                />
+                <span class="eq-value num">{{ formatDecibels(engine.eq()[band.key]) }}</span>
+              </label>
+            }
+
+            <button type="button" class="btn btn-sm" (click)="engine.resetEq()">
+              Remettre à plat
+            </button>
+          } @else {
+            <p class="tool-hint">
+              Ce navigateur ne fournit pas l'API Web Audio : l'égaliseur et le
+              visualiseur sont indisponibles. La lecture, elle, fonctionne.
+            </p>
+          }
+        </section>
+
+        <!-- ----------------------- Visualiseur ------------------------- -->
+        <section class="tool" aria-labelledby="stage-visualizer">
+          <h3 id="stage-visualizer">
+            <app-icon name="waveform" [size]="15" />
+            Visualiseur
+          </h3>
+          <div class="presets" role="group" aria-label="Rendu du visualiseur">
+            @for (mode of visualizerModes; track mode) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.is-active]="player.visualizerMode() === mode"
+                [disabled]="!engine.available()"
+                [attr.aria-pressed]="player.visualizerMode() === mode"
+                (click)="player.visualizerMode.set(mode)"
+              >
+                {{ visualizerLabels[mode] }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- ---------------------- File d'attente ----------------------- -->
+        <section class="tool" aria-labelledby="stage-queue">
+          <h3 id="stage-queue">
+            <app-icon name="queue" [size]="15" />
+            File d'attente
+            <span class="tool-value num">{{ player.queue().length }}</span>
+          </h3>
+
+          <ol class="queue" role="list">
+            @for (item of player.queue(); track item.id; let i = $index) {
+              <li [class.is-current]="i === player.index()">
+                <button type="button" class="queue-item" (click)="playFromQueue(item)">
+                  <span class="queue-index num">
+                    @if (i === player.index() && player.isPlaying()) {
+                      <span class="eq-animation" aria-hidden="true"><i></i><i></i><i></i></span>
+                    } @else {
+                      {{ i + 1 }}
+                    }
+                  </span>
+                  <span class="queue-title">{{ item.title }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="player.removeFromQueue(item.id)"
+                  [attr.aria-label]="'Retirer ' + item.title + ' de la file'"
+                >
+                  <app-icon name="close" [size]="15" />
+                </button>
+              </li>
+            } @empty {
+              <li class="queue-empty">La file ne contient que la piste en cours.</li>
+            }
+          </ol>
+        </section>
+      </div>
+    </div>
+  }
+</div>

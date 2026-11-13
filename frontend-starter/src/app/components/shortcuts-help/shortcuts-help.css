@@ -1,0 +1,142 @@
+/* ==========================================================================
+   Panneau d'aide : raccourcis clavier et choix du thème.
+   ========================================================================== */
+
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.veil {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(3px);
+  border: none;
+  cursor: default;
+}
+
+.panel {
+  position: relative;
+  display: grid;
+  gap: var(--sp-4);
+  width: min(100%, 680px);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.head .eyebrow { margin-bottom: var(--sp-1); }
+
+/* ---------------------------------------------------------- Apparence --- */
+.theme {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+}
+
+.theme-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Choix actif : fond plein ET état `aria-pressed`, jamais la couleur seule. */
+.theme-choices .btn.is-active {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.theme-hint {
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+}
+
+/* --------------------------------------------------------- Raccourcis --- */
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--sp-4);
+}
+
+h3 {
+  margin-bottom: var(--sp-2);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 5.6rem 1fr;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.line dt {
+  display: flex;
+  gap: 3px;
+}
+
+.line dd {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--step--1);
+}
+
+/* Les touches : des petites touches imprimées, dans le registre « papier »
+   de la charte. */
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  padding: 0.1rem 0.35rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  line-height: 1.4;
+}
+
+.foot {
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+}
+
+@media (max-width: 520px) {
+  .panel { padding: var(--sp-4); }
+  .line { grid-template-columns: 4.8rem 1fr; }
+}

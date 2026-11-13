@@ -1,0 +1,167 @@
+<!-- Zone de dépôt : l'`<input type="file">` est masqué visuellement mais reste
+     dans le DOM et relié au label par `for`/`id`. Il est donc atteignable au
+     clavier et annoncé par un lecteur d'écran, alors qu'un faux bouton
+     déclenchant l'input par programme ne le serait pas correctement. -->
+<div
+  class="dropzone"
+  [class.is-over]="dragging()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  <input
+    #fileInput
+    id="audio-file"
+    class="sr-only"
+    type="file"
+    multiple
+    accept=".mp3,.wav,.ogg,.m4a,audio/*"
+    (change)="choose($event)"
+    aria-describedby="upload-constraints"
+  />
+
+  <span class="drop-icon" aria-hidden="true">
+    <app-icon name="upload" [size]="22" />
+  </span>
+
+  <label for="audio-file" class="drop-label">
+    <b>Choisir des fichiers</b>
+    <span>ou les glisser ici</span>
+  </label>
+
+  <p id="upload-constraints" class="drop-hint">
+    MP3, WAV, OGG ou M4A — {{ maxSizeLabel }} par fichier
+  </p>
+</div>
+
+<!-- ============================ File d'envoi ============================ -->
+@if (queue.items().length > 0) {
+  <div class="queue-head">
+    <p class="rule">
+      {{ queue.items().length }} fichier(s)
+      @if (queue.successCount() > 0) {
+        · {{ queue.successCount() }} envoyé(s)
+      }
+    </p>
+    <button
+      type="button"
+      class="btn btn-sm btn-quiet"
+      [disabled]="queue.uploading()"
+      (click)="queue.clearFinished()"
+    >
+      Nettoyer
+    </button>
+  </div>
+
+  <!-- aria-live : les changements d'état sont annoncés sans que l'utilisateur
+       ait à retrouver la zone au clavier. -->
+  <ul class="items" role="list" aria-live="polite">
+    @for (item of queue.items(); track item.localId) {
+      <li class="item" [class.is-error]="item.state === 'error'">
+        <div class="item-head">
+          <span class="item-state" aria-hidden="true">
+            @switch (item.state) {
+              @case ('success') {
+                <app-icon name="check" [size]="15" />
+              }
+              @case ('error') {
+                <app-icon name="alert" [size]="15" />
+              }
+              @case ('uploading') {
+                <span class="spinner"></span>
+              }
+              @default {
+                <app-icon name="clock" [size]="15" />
+              }
+            }
+          </span>
+
+          <span class="item-name">
+            {{ item.file.name }}
+            <small class="num">{{ formatSize(item.file.size) }}</small>
+          </span>
+
+          <button
+            type="button"
+            class="icon-btn"
+            [disabled]="item.state === 'uploading'"
+            (click)="queue.remove(item.localId)"
+            [attr.aria-label]="'Retirer ' + item.file.name + ' de la file'"
+          >
+            <app-icon name="close" [size]="15" />
+          </button>
+        </div>
+
+        <!-- Le titre reste modifiable tant que le fichier n'est pas parti. -->
+        @if (item.state === 'pending') {
+          <label class="item-title">
+            <span class="sr-only">Titre affiché pour {{ item.file.name }}</span>
+            <input
+              type="text"
+              [value]="item.title"
+              placeholder="Titre affiché"
+              (input)="onTitleInput(item, $event)"
+            />
+          </label>
+        }
+
+        @switch (item.state) {
+          @case ('uploading') {
+            <div class="item-progress">
+              <!-- Barre déterminée dès qu'un pourcentage est connu,
+                   indéterminée sinon (taille totale non annoncée). -->
+              <mat-progress-bar
+                [mode]="item.progress === null ? 'indeterminate' : 'determinate'"
+                [value]="item.progress ?? 0"
+              />
+              <span class="num item-percent">
+                @if (item.progress !== null) {
+                  {{ item.progress }} %
+                } @else {
+                  envoi…
+                }
+              </span>
+            </div>
+          }
+          @case ('success') {
+            <p class="item-msg ok">
+              « {{ item.message }} » ajouté à votre bibliothèque.
+            </p>
+          }
+          @case ('error') {
+            <p class="item-msg err" role="alert">{{ item.message }}</p>
+            <button type="button" class="btn btn-sm" (click)="retry(item)">
+              <app-icon name="refresh" [size]="13" />
+              Réessayer
+            </button>
+          }
+        }
+      </li>
+    }
+  </ul>
+
+  <div class="queue-actions">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="queue.pendingCount() === 0 || queue.uploading()"
+      (click)="send()"
+    >
+      <app-icon name="upload" [size]="15" />
+      @if (queue.uploading()) {
+        Envoi en cours… {{ queue.overallProgress() }} %
+      } @else {
+        Envoyer {{ queue.pendingCount() }} fichier(s)
+      }
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-quiet"
+      [disabled]="queue.uploading()"
+      (click)="clearAll()"
+    >
+      Tout retirer
+    </button>
+  </div>
+}

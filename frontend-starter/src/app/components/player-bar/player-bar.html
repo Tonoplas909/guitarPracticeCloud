@@ -1,0 +1,231 @@
+<!-- =====================================================================
+     Barre de lecture — toujours visible, y compris quand rien ne joue.
+     Dans cet état elle annonce « Aucune lecture en cours » et ses commandes
+     sont désactivées : l'utilisateur sait toujours où les trouver.
+
+     Les quatre blocs (piste, transport, forme d'onde, réglages) sont des
+     frères directs de la grille : c'est ce qui permet de les replacer
+     librement en une seule ligne sur grand écran et en deux sur mobile,
+     sans dupliquer un seul bouton.
+     ===================================================================== -->
+<div class="bar" [class.is-idle]="!player.current()">
+  <!-- ----------------------------- Piste ----------------------------- -->
+  <div class="identity">
+    <!-- La « pochette » est le visualiseur en mode sillon : on n'a pas
+         d'image de l'album, alors on montre le son. Le disque tourne pendant
+         la lecture, s'arrête en pause. -->
+    <span class="art" [class.is-spinning]="player.isPlaying()">
+      @if (player.current() && engine.available()) {
+        <app-visualizer mode="groove" [height]="50" [playing]="player.isPlaying()" />
+      } @else {
+        <app-icon name="disc" [size]="24" />
+      }
+    </span>
+
+    <span class="meta">
+      @if (player.current(); as track) {
+        <b class="title" [title]="track.title">{{ track.title }}</b>
+        <small class="sub">
+          {{ formatAudioType(track.mimeType) }} · {{ formatSize(track.size) }}
+          @if (player.queue().length > 1) {
+            · <span class="num">{{ player.index() + 1 }}/{{ player.queue().length }}</span>
+          }
+        </small>
+      } @else {
+        <b class="title">Aucune lecture en cours</b>
+        <small class="sub">Choisissez une piste dans votre bibliothèque</small>
+      }
+    </span>
+
+    <button
+      type="button"
+      class="icon-btn fav secondary"
+      [class.is-on]="isFavorite()"
+      [disabled]="!player.current()"
+      (click)="toggleFavorite()"
+      [attr.aria-pressed]="isFavorite()"
+      [attr.aria-label]="isFavorite() ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+    >
+      <!-- Cœur plein / vide : l'état reste lisible sans la couleur. -->
+      <app-icon name="heart" [solid]="isFavorite()" />
+    </button>
+  </div>
+
+  <!-- --------------------------- Transport --------------------------- -->
+  <div class="buttons">
+    <button
+      type="button"
+      class="icon-btn secondary"
+      [class.is-on]="player.shuffle()"
+      (click)="player.toggleShuffle()"
+      [attr.aria-pressed]="player.shuffle()"
+      aria-label="Lecture aléatoire"
+    >
+      <app-icon name="shuffle" />
+    </button>
+
+    <button
+      type="button"
+      class="icon-btn secondary"
+      [disabled]="!player.canGoPrevious()"
+      (click)="player.previous()"
+      aria-label="Piste précédente"
+    >
+      <app-icon name="skip-back" />
+    </button>
+
+    <button
+      type="button"
+      class="play"
+      [disabled]="!player.current()"
+      (click)="player.toggle()"
+      [attr.aria-label]="player.isPlaying() ? 'Mettre en pause' : 'Reprendre la lecture'"
+    >
+      @if (player.loadingId()) {
+        <span class="spinner" aria-hidden="true"></span>
+      } @else if (player.isPlaying()) {
+        <app-icon name="pause" [size]="19" />
+      } @else {
+        <app-icon name="play" [size]="19" />
+      }
+    </button>
+
+    <button
+      type="button"
+      class="icon-btn secondary"
+      [disabled]="!player.canGoNext()"
+      (click)="player.next(true)"
+      aria-label="Piste suivante"
+    >
+      <app-icon name="skip-forward" />
+    </button>
+
+    <button
+      type="button"
+      class="icon-btn secondary"
+      [class.is-on]="player.repeat() !== 'off'"
+      (click)="player.cycleRepeat()"
+      [attr.aria-label]="repeatLabels[player.repeat()]"
+      [title]="repeatLabels[player.repeat()]"
+    >
+      <app-icon [name]="repeatIcon()" />
+    </button>
+  </div>
+
+  <!-- Forme d'onde : elle sert à la fois d'indicateur de progression et de
+       contrôle de déplacement, au pointeur comme au clavier. -->
+  <div class="scrub">
+    <span class="num time">{{ formatTime(player.currentTime()) }}</span>
+    <app-waveform
+      [peaks]="player.peaks()"
+      [currentTime]="player.currentTime()"
+      [duration]="player.duration()"
+      [loopStart]="player.loopStart()"
+      [loopEnd]="player.loopEnd()"
+      [disabled]="!player.current() || player.duration() === 0"
+      [height]="32"
+      (seekTo)="player.seekToRatio($event)"
+    />
+    <span class="num time">{{ formatTime(player.duration()) }}</span>
+  </div>
+
+  <!-- ----------------------------- Réglages ---------------------------- -->
+  <div class="tools">
+    @if (player.hasLoop()) {
+      <!-- La boucle A→B active est signalée par un texte, pas seulement par
+           la bande colorée de la forme d'onde. -->
+      <button
+        type="button"
+        class="chip chip-accent loop-chip secondary"
+        (click)="player.clearLoop()"
+        aria-label="Supprimer la boucle A-B"
+      >
+        <app-icon name="loop" [size]="13" />
+        <span class="num">
+          {{ formatTime(player.loopStart() ?? 0) }}–{{ formatTime(player.loopEnd() ?? 0) }}
+        </span>
+      </button>
+    }
+
+    <button
+      type="button"
+      class="icon-btn secondary"
+      [disabled]="!engine.available()"
+      (click)="cycleVisualizer()"
+      [title]="'Visualiseur : ' + visualizerLabels[visualizerMode()]"
+      [attr.aria-label]="'Changer le visualiseur. Actuellement : ' + visualizerLabels[visualizerMode()]"
+    >
+      <app-icon name="waveform" />
+    </button>
+
+    <label class="rate secondary">
+      <span class="sr-only">Vitesse de lecture</span>
+      <select [value]="player.rate()" (change)="onRateChange($event)">
+        @for (rate of rates; track rate) {
+          <option [value]="rate">{{ formatRate(rate) }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="volume secondary">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="player.toggleMute()"
+        [attr.aria-pressed]="player.muted()"
+        [attr.aria-label]="player.muted() ? 'Rétablir le son' : 'Couper le son'"
+      >
+        <app-icon [name]="player.muted() ? 'volume-off' : 'volume'" />
+      </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.02"
+        [value]="player.muted() ? 0 : player.volume()"
+        (input)="onVolumeChange($event)"
+        aria-label="Volume"
+      />
+    </div>
+
+    <button
+      type="button"
+      class="icon-btn"
+      [disabled]="!player.current()"
+      (click)="player.toggleStage()"
+      aria-label="Ouvrir la scène plein écran"
+      title="Scène plein écran (touche F)"
+    >
+      <app-icon name="expand" />
+    </button>
+  </div>
+</div>
+
+@if (player.error()) {
+  <p class="bar-error" role="alert">
+    <app-icon name="alert" [size]="15" />
+    {{ player.error() }}
+  </p>
+}
+
+<!-- L'élément <audio> est le moteur réel du son : c'est lui qui reçoit
+     l'ObjectURL du Blob téléchargé de façon authentifiée, et c'est lui qui est
+     branché sur le graphe Web Audio.
+
+     Deux choix volontaires :
+     - il est TOUJOURS présent (pas de `@if`), car `createMediaElementSource()`
+       ne peut être appelé qu'une fois par élément : un élément recréé couperait
+       le visualiseur ;
+     - son `src` est posé par `[attr.src]`, avec `null` quand il n'y a rien à
+       jouer, ce qui RETIRE l'attribut. Un `src=""` serait résolu comme l'URL de
+       la page elle-même et déclencherait une erreur de chargement sans raison. -->
+<audio
+  #audio
+  [attr.src]="player.audioUrl() || null"
+  (loadedmetadata)="player.onLoadedMetadata()"
+  (timeupdate)="player.onTimeUpdate()"
+  (play)="player.isPlaying.set(true)"
+  (pause)="player.isPlaying.set(false)"
+  (ended)="player.onEnded()"
+  (error)="player.onAudioError()"
+></audio>

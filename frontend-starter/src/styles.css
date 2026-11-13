@@ -1,0 +1,694 @@
+/* ==========================================================================
+   Guitar Practice Cloud — « SILLON », feuille de style globale
+   --------------------------------------------------------------------------
+   Direction artistique : l'archive analogique. Papier chaud, encre, un rouge
+   vermillon de tampon encreur, et des détails d'instrument (chronomètres en
+   chiffres monospace, VU-mètres, disque qui tourne). L'inverse exact d'une
+   interface « néon » : ici le décor se tait et laisse lire.
+
+   Deux thèmes complets et assumés, pas une simple inversion :
+   - « Jour » : papier (défaut)
+   - « Nuit » : encre, pour écouter le soir
+
+   Le thème est porté par l'attribut `data-theme` sur <html> (voir
+   ThemeService). Sans attribut, on suit `prefers-color-scheme`.
+
+   Tout passe par des variables CSS, y compris les jetons `--mat-sys-*`
+   d'Angular Material : le thème préfabriqué `azure-blue.css` est un thème
+   CLAIR sans règle `prefers-color-scheme`, mais entièrement piloté par ces
+   jetons. On les réécrit donc dans les deux thèmes pour que Paginator,
+   ProgressBar et SnackBar suivent la charte.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Jetons — thème « Jour » (papier)
+   Contrastes WCAG mesurés et reportés dans docs/DIRECTION_ARTISTIQUE.md.
+   ========================================================================== */
+:root {
+  color-scheme: light;
+
+  /* --- Surfaces ------------------------------------------------------- */
+  --bg: #f3ede1;
+  --surface: #fffdf8;
+  --surface-2: #eae2d2;
+  --surface-3: #e2d8c4;
+  --line: #d9cfba;
+  --line-strong: #b8ab92;
+
+  /* --- Encre (texte) --------------------------------------------------
+     ink 15.3:1 sur --bg · muted 6.7:1 · faint 5.0:1 — tous AA texte. */
+  --ink: #1b1713;
+  --ink-muted: #5a5147;
+  --ink-faint: #6f6454;
+
+  /* Canal brut de l'encre, pour composer des transparences sans multiplier
+     les variables de couleur : rgb(var(--ink-channel) / 0.08). */
+  --ink-channel: 27 23 19;
+
+  /* --- Accents --------------------------------------------------------
+     Vermillon de tampon encreur en primaire (5.4:1 sur --surface),
+     vert-de-gris en secondaire (5.5:1). */
+  --accent: #c0391c;
+  --accent-strong: #9e2d13;
+  --accent-soft: rgb(192 57 28 / 0.1);
+  --accent-ink: #fffdf8;
+  --accent-2: #007568;
+  --accent-2-soft: rgb(0 117 104 / 0.1);
+
+  /* --- États ---------------------------------------------------------- */
+  --ok: #0a6e45;
+  --ok-soft: rgb(10 110 69 / 0.1);
+  --danger: #b3261e;
+  --danger-soft: rgb(179 38 30 / 0.1);
+  --danger-ink: #fffdf8;
+
+  /* --- Palette catégorielle des formats audio -------------------------
+     4 teintes validées par le script de la compétence « dataviz » (mode
+     light, surface #fffdf8) : bande de clarté, plancher de chroma,
+     séparation sous protanopie / deutéranopie et contraste >= 3:1 sur la
+     surface. Elles ne servent QUE de marques de graphique, jamais de texte. */
+  --fmt-1: #c0391c; /* MP3 */
+  --fmt-2: #00897a; /* WAV */
+  --fmt-3: #5a4ab8; /* OGG */
+  --fmt-4: #a97012; /* M4A */
+
+  /* --- Décor ---------------------------------------------------------- */
+  --grain-opacity: 0.4;
+  --groove-opacity: 0.5;
+
+  /* --- Ombres : décalage « imprimé », jamais de halo coloré ----------- */
+  --shadow-1: 0 1px 2px rgb(var(--ink-channel) / 0.07);
+  --shadow-2: 0 2px 4px rgb(var(--ink-channel) / 0.05),
+    0 12px 28px -14px rgb(var(--ink-channel) / 0.22);
+  --shadow-3: 0 24px 60px -20px rgb(var(--ink-channel) / 0.35);
+}
+
+/* ==========================================================================
+   2. Jetons — thème « Nuit » (encre)
+   Choisi pas à pas sur la surface sombre, pas obtenu par inversion.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='jour']) {
+    color-scheme: dark;
+
+    --bg: #14110d;
+    --surface: #1e1a15;
+    --surface-2: #272117;
+    --surface-3: #332c20;
+    --line: #3b3327;
+    --line-strong: #574c3b;
+
+    --ink: #f4ecdd;
+    --ink-muted: #b5a992;
+    --ink-faint: #9a8e79;
+    --ink-channel: 244 236 221;
+
+    --accent: #ff6f45;
+    --accent-strong: #ff8b69;
+    --accent-soft: rgb(255 111 69 / 0.14);
+    --accent-ink: #1b1004;
+    --accent-2: #35c3ad;
+    --accent-2-soft: rgb(53 195 173 / 0.14);
+
+    --ok: #4ec98a;
+    --ok-soft: rgb(78 201 138 / 0.14);
+    --danger: #ff6b6b;
+    --danger-soft: rgb(255 107 107 / 0.14);
+    --danger-ink: #1b1004;
+
+    /* Palette catégorielle re-validée sur la surface sombre #1e1a15. */
+    --fmt-1: #e8552b;
+    --fmt-2: #19a08c;
+    --fmt-3: #8878e8;
+    --fmt-4: #c08a1e;
+
+    --grain-opacity: 0.22;
+    --groove-opacity: 0.35;
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+    --shadow-3: 0 24px 60px -20px rgb(0 0 0 / 0.8);
+  }
+}
+
+/* Choix explicite de l'utilisateur : il doit gagner dans les deux sens, donc
+   les mêmes jetons sont redéclarés sous l'attribut. */
+:root[data-theme='nuit'] {
+  color-scheme: dark;
+
+  --bg: #14110d;
+  --surface: #1e1a15;
+  --surface-2: #272117;
+  --surface-3: #332c20;
+  --line: #3b3327;
+  --line-strong: #574c3b;
+
+  --ink: #f4ecdd;
+  --ink-muted: #b5a992;
+  --ink-faint: #9a8e79;
+  --ink-channel: 244 236 221;
+
+  --accent: #ff6f45;
+  --accent-strong: #ff8b69;
+  --accent-soft: rgb(255 111 69 / 0.14);
+  --accent-ink: #1b1004;
+  --accent-2: #35c3ad;
+  --accent-2-soft: rgb(53 195 173 / 0.14);
+
+  --ok: #4ec98a;
+  --ok-soft: rgb(78 201 138 / 0.14);
+  --danger: #ff6b6b;
+  --danger-soft: rgb(255 107 107 / 0.14);
+  --danger-ink: #1b1004;
+
+  --fmt-1: #e8552b;
+  --fmt-2: #19a08c;
+  --fmt-3: #8878e8;
+  --fmt-4: #c08a1e;
+
+  --grain-opacity: 0.22;
+  --groove-opacity: 0.35;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+  --shadow-3: 0 24px 60px -20px rgb(0 0 0 / 0.8);
+}
+
+/* ==========================================================================
+   3. Jetons invariants : typographie, rythme, formes
+   ========================================================================== */
+:root {
+  /* Trois familles, trois rôles :
+     - display : Fraunces, serif variable à fort contraste (titres, chiffres
+       vedettes) — l'identité « papier imprimé » ;
+     - texte   : Inter, pour tout le reste ;
+     - chiffre : JetBrains Mono pour les compteurs et chronomètres, afin que
+       le temps ne « saute » pas d'un dixième à l'autre. */
+  --font-display: Fraunces, 'Iowan Old Style', Georgia, serif;
+  --font-sans: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  /* Échelle typographique : 15 px de base, rapport ~1.14, fluide (clamp) sur
+     les deux niveaux hauts. */
+  --step--2: 0.6875rem;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.0625rem;
+  --step-2: 1.25rem;
+  --step-3: clamp(1.4rem, 1.2rem + 0.9vw, 1.75rem);
+  --step-4: clamp(1.9rem, 1.45rem + 2.2vw, 3rem);
+
+  /* Rythme : une seule échelle de 4 px. */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+
+  /* Formes : des angles presque droits, comme une étiquette collée. Le
+     « pill » est réservé aux puces d'information. */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* Hauteur de la barre de lecture : réservée en bas de page pour qu'aucun
+     contenu ne finisse dessous. Une seule source de vérité. */
+  --player-h: 76px;
+
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  font-variant-ligatures: common-ligatures;
+}
+
+/* Sous 900 px la barre de lecture passe sur deux lignes (forme d'onde au
+   dessus des commandes) : l'espace réservé en bas de page doit suivre. */
+@media (max-width: 900px) {
+  :root { --player-h: 104px; }
+}
+
+* { box-sizing: border-box; }
+
+html,
+body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* --------------------------------------------------------------------------
+   Décor : grain de papier + sillons de disque
+   Deux pseudo-éléments fixes, strictement décoratifs (pointer-events: none).
+   Le grain est un bruit SVG (feTurbulence) en data-URI : aucune requête, et
+   il casse l'aspect « aplat numérique » des grandes surfaces de couleur.
+   -------------------------------------------------------------------------- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+/* En thème sombre, le grain doit éclaircir et non assombrir. */
+:root[data-theme='nuit'] body::before { mix-blend-mode: screen; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='jour']) body::before { mix-blend-mode: screen; }
+}
+
+/* Sillons : des cercles concentriques très pâles en haut à droite, comme un
+   disque posé sous la page. Un seul dégradé radial répété. */
+body::after {
+  content: '';
+  position: fixed;
+  top: -22vmax;
+  right: -18vmax;
+  width: 78vmax;
+  height: 78vmax;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  opacity: var(--groove-opacity);
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0 11px,
+    rgb(var(--ink-channel) / 0.055) 11px 12px
+  );
+  mask-image: radial-gradient(circle at center, black 18%, transparent 68%);
+  -webkit-mask-image: radial-gradient(circle at center, black 18%, transparent 68%);
+}
+
+/* ==========================================================================
+   4. Titraille et texte courant
+   ========================================================================== */
+h1,
+h2,
+h3,
+h4 { margin: 0; }
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  /* Fraunces est une variable font : on fixe ses axes une fois pour un rendu
+     stable (SOFT = adoucissement des terminaisons, WONK = italiques
+     fantaisie, opsz = taille optique). */
+  font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 48;
+}
+
+h1 { font-size: var(--step-4); }
+h2 { font-size: var(--step-3); }
+
+h3,
+h4 {
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+p { margin: 0; }
+
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+
+a:hover { color: var(--accent); }
+
+/* Surtitre : petites capitales espacées, la « rubrique » d'une page. */
+.eyebrow {
+  margin: 0 0 var(--sp-2);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: 56ch;
+  color: var(--ink-muted);
+  font-size: var(--step-0);
+}
+
+/* Chiffres d'instrument : largeur fixe pour que rien ne tremble. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Filet typographique repris du papier : un mot, puis un trait. */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ==========================================================================
+   5. Mise en page
+   ========================================================================== */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-block: var(--sp-6) var(--sp-5);
+  padding-inline: var(--sp-5);
+  /* La barre de lecture est fixée : on réserve sa hauteur, sinon le dernier
+     élément de la page finirait dessous. */
+  padding-bottom: calc(var(--player-h) + var(--sp-6));
+}
+
+@media (max-width: 720px) {
+  main { padding-inline: var(--sp-4); }
+}
+
+/* Feuille : le conteneur de base, une feuille de papier posée. */
+.sheet {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-1);
+}
+
+.sheet-pad { padding: var(--sp-5); }
+
+@media (max-width: 720px) {
+  .sheet-pad { padding: var(--sp-4); }
+}
+
+/* ==========================================================================
+   6. Formulaires
+   ========================================================================== */
+label {
+  display: grid;
+  gap: var(--sp-2);
+  color: var(--ink-muted);
+  font-size: var(--step--1);
+  font-weight: 500;
+}
+
+.field {
+  display: grid;
+  gap: var(--sp-2);
+  margin-block: var(--sp-4);
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input:not([type]),
+select,
+textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled) { border-color: var(--ink-faint); }
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+input:disabled,
+select:disabled { opacity: 0.55; cursor: not-allowed; }
+
+input::placeholder { color: var(--ink-faint); }
+
+/* ==========================================================================
+   7. Boutons
+   Aucun style n'est imposé à `button` nu : les composants Angular Material
+   (Paginator) en contiennent et doivent garder le leur. Tout passe par des
+   classes explicites.
+   ========================================================================== */
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 0.52rem 0.95rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--step--1);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.08s;
+}
+
+.btn:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-2);
+  border-color: var(--ink-faint);
+}
+
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; }
+
+/* Action principale : le vermillon, aplati, sans dégradé ni lueur. */
+.btn-primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  color: var(--accent-ink);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+/* Action discrète : pas de fond au repos. */
+.btn-quiet {
+  color: var(--ink-muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn-quiet:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-2);
+  border-color: transparent;
+}
+
+/* Action destructrice : discrète au repos, franche au survol. */
+.btn-danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: var(--line-strong);
+}
+
+.btn-danger:hover:not(:disabled) {
+  color: var(--danger-ink);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-sm { padding: 0.34rem 0.6rem; font-size: var(--step--2); }
+
+/* Bouton icône carré : la brique des transports du lecteur. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.icon-btn:hover:not(:disabled) { color: var(--ink); background: var(--surface-2); }
+.icon-btn:disabled { opacity: 0.35; }
+
+/* État actif d'une bascule (aléatoire, répétition, favori…) : couleur ET
+   fond, jamais la couleur seule. */
+.icon-btn.is-on { color: var(--accent); background: var(--accent-soft); }
+
+/* Puce d'information : format, taille, date. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.14rem 0.5rem;
+  color: var(--ink-muted);
+  background: var(--surface-2);
+  border-radius: var(--r-pill);
+  font-size: var(--step--2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chip-accent { color: var(--accent); background: var(--accent-soft); }
+
+/* ==========================================================================
+   8. Accessibilité
+   ========================================================================== */
+:is(button, a, input, select, textarea, [tabindex], summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Lien d'évitement : caché jusqu'au focus clavier. */
+.skip-link {
+  position: fixed;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  z-index: 60;
+  padding: 0.5rem 0.9rem;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: var(--r-sm);
+  font-size: var(--step--1);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 0.15s;
+}
+
+.skip-link:focus-visible { color: var(--accent-ink); transform: translateY(0); }
+
+/* ==========================================================================
+   9. Messages
+   ========================================================================== */
+.notice {
+  display: flex;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-3);
+  border-radius: var(--r-sm);
+  font-size: var(--step--1);
+}
+
+.notice-error { color: var(--danger); background: var(--danger-soft); border-left: 3px solid var(--danger); }
+.notice-ok { color: var(--ok); background: var(--ok-soft); border-left: 3px solid var(--ok); }
+
+.field-error { color: var(--danger); font-size: var(--step--2); font-weight: 500; }
+.field-hint { color: var(--ink-faint); font-size: var(--step--2); }
+
+/* ==========================================================================
+   10. Jetons Angular Material, réécrits pour les deux thèmes
+   Relevés dans les bundles des trois composants réellement utilisés :
+   - SnackBar    : inverse-surface, inverse-on-surface, inverse-primary
+   - Paginator   : surface, on-surface, on-surface-variant, surface-container
+   - ProgressBar : primary, surface-variant
+   ========================================================================== */
+:root {
+  --mat-sys-primary: var(--accent);
+  --mat-sys-on-primary: var(--accent-ink);
+  --mat-sys-background: var(--bg);
+  --mat-sys-surface: transparent;
+  --mat-sys-on-surface: var(--ink);
+  --mat-sys-on-surface-variant: var(--ink-muted);
+  --mat-sys-surface-variant: var(--surface-3);
+  --mat-sys-surface-container: var(--surface);
+  --mat-sys-outline: var(--line-strong);
+  --mat-sys-error: var(--danger);
+  /* Le SnackBar Material utilise la surface « inversée » : c'est la
+     convention Material 3 et cela le rend immédiatement repérable. */
+  --mat-sys-inverse-surface: var(--ink);
+  --mat-sys-inverse-on-surface: var(--surface);
+  --mat-sys-inverse-primary: var(--accent-strong);
+  --mat-sys-body-medium-font: var(--font-sans);
+  --mat-sys-label-large-font: var(--font-sans);
+}
+
+.mat-mdc-paginator {
+  color: var(--ink-muted);
+  background: transparent !important;
+  font-family: var(--font-sans);
+}
+
+.mat-mdc-progress-bar {
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   11. Mouvement
+   Les animations de l'application sont lentes et peu nombreuses (le disque
+   qui tourne, le voile de la scène). La préférence système les coupe toutes.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

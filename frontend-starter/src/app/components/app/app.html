@@ -1,0 +1,95 @@
+<!-- Lien d'évitement : première cible de tabulation de la page, invisible
+     jusqu'au focus clavier. -->
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <!-- ------------------------------ Marque ------------------------------ -->
+    <a class="brand" routerLink="/tracks">
+      <!-- Le logotype : un disque et son sillon, dessiné au trait pour suivre
+           la couleur d'encre du thème, et son centre en vermillon. -->
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="1.4" />
+          <circle cx="16" cy="16" r="10" stroke="currentColor" stroke-width="1" opacity=".45" />
+          <circle cx="16" cy="16" r="6.5" stroke="currentColor" stroke-width="1" opacity=".45" />
+          <circle cx="16" cy="16" r="3.4" fill="var(--accent)" />
+        </svg>
+      </span>
+      <span class="brand-text">
+        <b>Guitar Practice Cloud</b>
+        <small>Vos pistes, rangées et prêtes à travailler</small>
+      </span>
+    </a>
+
+    <!-- ---------------------------- Navigation ---------------------------- -->
+    <nav aria-label="Navigation principale">
+      @if (auth.token()) {
+        <!-- routerLinkActive marque l'onglet courant : l'utilisateur voit où
+             il est sans relire l'URL. -->
+        <a routerLink="/tracks" routerLinkActive="is-active">
+          <app-icon name="music" [size]="15" />
+          <span>Bibliothèque</span>
+        </a>
+        <a routerLink="/profile" routerLinkActive="is-active">
+          <app-icon name="user" [size]="15" />
+          <span>Profil</span>
+        </a>
+      }
+    </nav>
+
+    <!-- ------------------------------ Outils ------------------------------ -->
+    <div class="topbar-tools">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="helpOpen.set(true)"
+        aria-label="Afficher les raccourcis clavier"
+        title="Raccourcis clavier (touche ?)"
+      >
+        <app-icon name="keyboard" [size]="17" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="
+          theme.resolved() === 'nuit' ? 'Passer au thème clair' : 'Passer au thème sombre'
+        "
+        [title]="theme.resolved() === 'nuit' ? 'Thème : nuit' : 'Thème : jour'"
+      >
+        <app-icon [name]="theme.resolved() === 'nuit' ? 'moon' : 'sun'" [size]="17" />
+      </button>
+
+      @if (auth.token()) {
+        <button type="button" class="btn btn-sm" (click)="logout()">
+          <app-icon name="logout" [size]="14" />
+          <span class="label-wide">Déconnexion</span>
+        </button>
+      } @else {
+        <a class="btn btn-sm btn-primary" routerLink="/login">Connexion</a>
+      }
+    </div>
+  </div>
+</header>
+
+<main id="contenu">
+  <router-outlet />
+</main>
+
+<!-- La scène et la barre de lecture vivent DANS la coquille, au-dessus du
+     router-outlet : changer de page ne les détruit donc pas, et la musique
+     continue. C'est tout l'intérêt d'avoir sorti l'état du lecteur dans un
+     service partagé. -->
+@if (player.stageOpen()) {
+  <app-stage />
+}
+
+@if (auth.token()) {
+  <app-player-bar />
+}
+
+@if (helpOpen()) {
+  <app-shortcuts-help (close)="helpOpen.set(false)" />
+}

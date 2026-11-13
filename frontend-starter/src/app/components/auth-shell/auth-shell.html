@@ -1,0 +1,42 @@
+<div class="auth">
+  <!-- ============================== Affiche ==============================
+       Purement décorative, et masquée sous 900 px : sur mobile, seul le
+       formulaire compte. -->
+  <aside class="poster" aria-hidden="true">
+    <div class="poster-disc">
+      <span class="poster-label"></span>
+    </div>
+
+    <p class="poster-kicker">Sillon</p>
+    <p class="poster-title">Vos pistes de travail, rangées comme une archive.</p>
+
+    @if (highlights().length > 0) {
+      <ul class="poster-list">
+        @for (item of highlights(); track item) {
+          <li>
+            <app-icon name="check" [size]="14" />
+            {{ item }}
+          </li>
+        }
+      </ul>
+    }
+
+    <p class="poster-foot">Guitar Practice Cloud · MIAGE M1</p>
+  </aside>
+
+  <!-- ============================ Formulaire ============================ -->
+  <section class="form-side">
+    <div class="sheet sheet-pad form-card">
+      @if (eyebrow()) {
+        <p class="eyebrow">{{ eyebrow() }}</p>
+      }
+      <h1>{{ heading() }}</h1>
+      @if (lede()) {
+        <p class="lede form-lede">{{ lede() }}</p>
+      }
+
+      <!-- Le formulaire de la page appelante est projeté ici. -->
+      <ng-content />
+    </div>
+  </section>
+</div>

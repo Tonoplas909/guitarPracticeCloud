@@ -1,0 +1,445 @@
+/* ==========================================================================
+   « La scène » — vue plein écran de la lecture en cours.
+   Posée au-dessus de tout, SAUF de la barre de lecture : les commandes
+   restent accessibles même scène ouverte (z-index 40 pour la barre, 30 ici).
+   ========================================================================== */
+
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: block;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+}
+
+/* Le voile est un vrai <button> : cliquer à côté referme, ce qui est le
+   comportement attendu d'une modale. Il est retiré de l'ordre de tabulation
+   (tabindex -1) car le bouton de fermeture joue déjà ce rôle au clavier. */
+.veil {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(3px);
+  border: none;
+  cursor: default;
+  animation: fade 0.18s ease-out;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+}
+
+.panel {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-5) calc(var(--player-h) + var(--sp-6));
+  animation: rise 0.22s ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+
+.head .eyebrow {
+  margin: 0;
+  color: var(--accent);
+}
+
+/* Sur le voile sombre, les icônes du haut doivent rester visibles quel que
+   soit le thème : on force l'encre claire. */
+.head .icon-btn {
+  color: #f4ecdd;
+  border-color: rgb(255 255 255 / 0.25);
+}
+
+.head .icon-btn:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.14);
+}
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+/* ====================================================== Colonne gauche === */
+.now {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+}
+
+/* Le disque : un cercle de sillons, dans lequel le visualiseur est inscrit. */
+.disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  color: var(--ink-faint);
+  background:
+    repeating-radial-gradient(
+      circle at center,
+      transparent 0 6px,
+      rgb(var(--ink-channel) / 0.06) 6px 7px
+    ),
+    var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.disc.is-spinning { animation: spin 14s linear infinite; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.disc app-visualizer {
+  width: 86%;
+}
+
+/* Le centre du disque : l'étiquette et son trou. */
+.disc::after {
+  content: '';
+  position: absolute;
+  width: 14%;
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--accent-soft);
+}
+
+.now-meta {
+  display: grid;
+  gap: var(--sp-2);
+  text-align: center;
+}
+
+.now-meta h2 {
+  /* Un titre long ne doit pas repousser la mise en page : il passe sur deux
+     lignes puis se coupe. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.now-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+}
+
+.clock {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--step-3);
+  font-weight: 500;
+  text-align: center;
+}
+
+.clock-total {
+  color: var(--ink-faint);
+  font-size: var(--step-0);
+}
+
+.analysing {
+  margin-top: calc(var(--sp-2) * -1);
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.controls .play {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  transition: background-color 0.15s, transform 0.08s;
+}
+
+.controls .play:hover { background: var(--accent-strong); }
+.controls .play:active { transform: scale(0.96); }
+
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+}
+
+/* ===================================================== Colonne droite === */
+.tools {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.tool {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-2);
+}
+
+.tool h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink);
+}
+
+.tool-value {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: var(--step--1);
+}
+
+.tool-hint {
+  margin-top: calc(var(--sp-2) * -1);
+  color: var(--ink-muted);
+  font-size: var(--step--2);
+}
+
+.loop-actions,
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.loop-actions .btn .num,
+.presets .btn .num {
+  color: var(--accent);
+}
+
+/* État « sélectionné » d'un préréglage : fond ET bordure, pour que le choix
+   actif reste visible sans dépendre de la seule couleur. */
+.btn.is-active {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn.is-active:hover {
+  color: var(--accent-ink);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btn.is-active .num { color: inherit; }
+
+/* ---------------------------------------------------------- Curseurs --- */
+/* Un seul style de curseur pour la vitesse et les trois bandes de
+   l'égaliseur. WebKit et Firefox exigent des pseudo-éléments distincts :
+   un sélecteur inconnu invaliderait toute la règle. */
+.slider {
+  width: 100%;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: var(--r-pill);
+}
+
+.slider::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  margin-top: -5.5px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.slider::-moz-range-track {
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: var(--r-pill);
+}
+
+.slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+}
+
+.slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--r-pill);
+}
+
+/* -------------------------------------------------------- Égaliseur --- */
+.eq-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-1);
+}
+
+.eq-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  color: var(--ink);
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+
+.eq-label small {
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+  font-weight: 400;
+}
+
+.eq-value {
+  color: var(--ink-muted);
+  font-size: var(--step--2);
+  text-align: right;
+}
+
+/* ----------------------------------------------------- File d'attente --- */
+.queue {
+  display: grid;
+  gap: 2px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.queue li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border-radius: var(--r-sm);
+}
+
+.queue li:hover { background: var(--surface-2); }
+
+/* La piste en cours : un filet d'accent à gauche ET un fond — jamais la
+   couleur seule. */
+.queue li.is-current {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.queue-item {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: var(--sp-2);
+  color: var(--ink);
+  background: none;
+  border: none;
+  text-align: left;
+}
+
+.queue-index {
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+  text-align: center;
+}
+
+.queue-title {
+  overflow: hidden;
+  font-size: var(--step--1);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.queue-empty {
+  padding: var(--sp-2);
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+}
+
+/* Petit égaliseur animé : trois barres qui montent et descendent, pour
+   marquer la piste en cours de lecture dans la file. */
+.eq-animation {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.eq-animation i {
+  width: 2.5px;
+  height: 40%;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: bounce 0.9s ease-in-out infinite;
+}
+
+.eq-animation i:nth-child(2) { animation-delay: 0.15s; }
+.eq-animation i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+  0%, 100% { height: 35%; }
+  50% { height: 100%; }
+}
+
+/* ========================================================= Adaptations === */
+@media (max-width: 920px) {
+  .stage-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel { padding-inline: var(--sp-4); }
+
+  .disc { width: min(100%, 240px); }
+
+  .queue { max-height: 200px; }
+}

@@ -1,0 +1,150 @@
+/* ==========================================================================
+   Tableau de bord de la bibliothèque.
+   ========================================================================== */
+
+:host {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+/* ------------------------------------------------------- Chiffres clés --- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: var(--sp-3);
+  margin: 0;
+}
+
+.tile {
+  display: grid;
+  gap: 2px;
+  padding-left: var(--sp-3);
+  /* Un filet vertical plutôt qu'une boîte : la tuile reste légère et le
+     papier respire. */
+  border-left: 2px solid var(--line);
+}
+
+.tile dt {
+  color: var(--ink-muted);
+  font-size: var(--step--2);
+  font-weight: 500;
+}
+
+.tile dd {
+  margin: 0;
+  /* Les chiffres restent en sans : une valeur en serif de titrage se lirait
+     comme une décoration, pas comme une donnée. Et pas de `tabular-nums`
+     ici — à cette taille, les chiffres à largeur fixe paraissent espacés. */
+  font-family: var(--font-sans);
+  font-size: var(--step-2);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Le chiffre vedette : un seul par vue, et c'est celui-là. */
+.tile-hero {
+  border-left-color: var(--accent);
+}
+
+.tile-hero dd.hero {
+  font-size: clamp(2.2rem, 1.6rem + 2vw, 3.1rem);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------- Répartition --- */
+.breakdown {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+/* La barre empilée. Les parts sont séparées par un intervalle de 2 px dans la
+   couleur de la surface : c'est le blanc qui sépare, pas un contour — un
+   contour ajouterait de l'encre qui n'est pas de la donnée. */
+.meter {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: var(--r-pill);
+}
+
+.slice {
+  display: block;
+  min-width: 4px;
+  flex-basis: 0;
+}
+
+/* Les extrémités suivent l'arrondi du rail. */
+.slice:first-child { border-radius: var(--r-pill) 0 0 var(--r-pill); }
+.slice:last-child { border-radius: 0 var(--r-pill) var(--r-pill) 0; }
+.slice:only-child { border-radius: var(--r-pill); }
+
+.legend {
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--step--1);
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.swatch-other { background: var(--ink-faint); }
+
+/* Le texte de la légende porte les jetons d'encre, jamais la couleur de la
+   série : une teinte claire serait illisible en texte. L'identité est
+   portée par la pastille à côté. */
+.legend-label { color: var(--ink); }
+
+.legend-value {
+  color: var(--ink);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.legend-share {
+  min-width: 4ch;
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.empty-note,
+.scope {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink-faint);
+  font-size: var(--step--2);
+}
+
+.scope { flex-wrap: wrap; }
+
+.link-btn {
+  padding: 0;
+  color: var(--accent);
+  background: none;
+  border: none;
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-btn:hover { color: var(--accent-strong); }

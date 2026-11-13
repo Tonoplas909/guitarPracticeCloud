@@ -1,0 +1,215 @@
+<!-- =========================== En-tête de page =========================== -->
+<header class="page-head">
+  <div class="page-title">
+    <p class="eyebrow">Ma bibliothèque</p>
+    <h1>Pistes</h1>
+    <p class="lede">
+      Importez vos morceaux, retrouvez-les d'un mot, et travaillez-les au
+      ralenti ou en boucle.
+    </p>
+  </div>
+
+  <app-library-stats class="page-stats" />
+</header>
+
+<div class="layout">
+  <!-- ========================= Panneau d'import ========================= -->
+  <aside class="side">
+    <section class="sheet sheet-pad" aria-labelledby="upload-title">
+      <h2 id="upload-title" class="side-title">Importer</h2>
+      <app-upload-panel (uploaded)="onUploaded($event)" />
+    </section>
+  </aside>
+
+  <!-- ========================== Bibliothèque =========================== -->
+  <section class="main-col" aria-labelledby="library-title">
+    <div class="sheet">
+      <!-- ----------------------- Barre de filtres -----------------------
+           Tous les contrôles de la liste sur une seule ligne, au-dessus
+           d'elle : on voit d'un coup d'œil ce qui restreint l'affichage. -->
+      <div class="toolbar">
+        <h2 id="library-title" class="sr-only">Mes pistes</h2>
+
+        <div class="search">
+          <span class="search-icon" aria-hidden="true">
+            <app-icon name="search" [size]="16" />
+          </span>
+          <input
+            #searchInput
+            id="library-search"
+            type="search"
+            [value]="store.search()"
+            (input)="onSearchInput($event)"
+            placeholder="Rechercher un titre ou un fichier…"
+            aria-label="Rechercher dans la bibliothèque"
+          />
+          <kbd class="search-kbd" aria-hidden="true">/</kbd>
+        </div>
+
+        <label class="select">
+          <span class="sr-only">Trier par</span>
+          <select [value]="store.sort()" (change)="onSortChange($event)">
+            @for (key of sortKeys; track key) {
+              <option [value]="key">{{ sortLabels[key] }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="select">
+          <span class="sr-only">Filtrer par format</span>
+          <select [value]="store.format()" (change)="onFormatChange($event)">
+            @for (value of formatFilters; track value) {
+              <option [value]="value">
+                {{ value === 'all' ? 'Tous les formats' : value }}
+              </option>
+            }
+          </select>
+        </label>
+
+        @if (tags().length > 0) {
+          <label class="select">
+            <span class="sr-only">Filtrer par étiquette</span>
+            <select [value]="store.tag() ?? ''" (change)="onTagChange($event)">
+              <option value="">Toutes les étiquettes</option>
+              @for (tag of tags(); track tag) {
+                <option [value]="tag">{{ tag }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        <button
+          type="button"
+          class="icon-btn"
+          [class.is-on]="store.favoritesOnly()"
+          (click)="store.toggleFavoritesOnly()"
+          [attr.aria-pressed]="store.favoritesOnly()"
+          aria-label="N'afficher que les favoris"
+          title="Favoris uniquement"
+        >
+          <app-icon name="heart" [solid]="store.favoritesOnly()" [size]="16" />
+        </button>
+
+        <button
+          type="button"
+          class="icon-btn"
+          [disabled]="store.loading()"
+          (click)="store.refresh()"
+          aria-label="Actualiser la bibliothèque"
+          title="Actualiser"
+        >
+          <app-icon name="refresh" [size]="16" />
+        </button>
+      </div>
+
+      <!-- État des filtres : ce qui est affiché, et comment revenir à tout. -->
+      @if (store.filtered() || store.mode() === 'all') {
+        <p class="filter-state" role="status">
+          @if (store.loading()) {
+            Chargement de la bibliothèque complète…
+          } @else {
+            <strong class="num">{{ store.visible().length }}</strong>
+            piste(s) affichée(s) sur {{ store.total() }}
+            @if (store.hiddenCount() > 0) {
+              · {{ store.hiddenCount() }} écartée(s) par les filtres
+            }
+          }
+          @if (store.filtered()) {
+            <button type="button" class="btn btn-sm btn-quiet" (click)="store.resetFilters()">
+              <app-icon name="close" [size]="13" />
+              Réinitialiser
+            </button>
+          }
+        </p>
+      }
+
+      @if (store.error()) {
+        <p class="notice notice-error m-pad" role="alert">
+          <app-icon name="alert" [size]="16" />
+          {{ store.error() }}
+        </p>
+      }
+
+      <!-- ---------------------------- La liste ---------------------------- -->
+      @if (store.loading() && store.visible().length === 0) {
+        <!-- Squelettes : la mise en page ne saute pas quand les vraies lignes
+             arrivent. -->
+        <ul class="tracks" role="list" aria-hidden="true">
+          @for (skeleton of skeletons; track skeleton) {
+            <li><div class="skeleton"></div></li>
+          }
+        </ul>
+        <p class="sr-only" role="status">Chargement de la bibliothèque…</p>
+      } @else {
+        <ul class="tracks" role="list">
+          @for (track of store.visible(); track track.id) {
+            <li>
+              <app-track-row
+                [track]="track"
+                [isCurrent]="player.current()?.id === track.id"
+                [isPlaying]="player.isPlaying()"
+                [isLoading]="player.loadingId() === track.id || downloadingId() === track.id"
+                [isDeleting]="deletingId() === track.id"
+                [deleteLocked]="deletingId() !== null"
+                (play)="play($event)"
+                (enqueue)="enqueue($event)"
+                (download)="download($event)"
+                (remove)="remove($event)"
+                (tagSelected)="onTagSelected($event)"
+              />
+            </li>
+          } @empty {
+            @if (!store.error()) {
+              <li class="empty">
+                @if (store.filtered()) {
+                  <p><b>Aucune piste ne correspond à votre recherche.</b></p>
+                  <p class="lede">
+                    Essayez un autre mot, ou
+                    <button type="button" class="link-btn" (click)="store.resetFilters()">
+                      réinitialisez les filtres
+                    </button>.
+                  </p>
+                } @else {
+                  <span class="empty-icon" aria-hidden="true">
+                    <app-icon name="music" [size]="26" />
+                  </span>
+                  <p><b>Votre bibliothèque est vide.</b></p>
+                  <p class="lede">
+                    Déposez un premier fichier dans le panneau d'import pour
+                    commencer.
+                  </p>
+                }
+              </li>
+            }
+          }
+        </ul>
+      }
+
+      <!-- Paginator Angular Material : il fournit lui-même les boutons
+           « page précédente » / « page suivante », désactivés aux bornes, et
+           le sélecteur de taille de page. Chaque interaction déclenche une
+           nouvelle requête HTTP — c'est le serveur qui découpe.
+
+           Il disparaît en mode « bibliothèque complète » : paginer une liste
+           déjà entièrement chargée n'aurait aucun sens. -->
+      @if (store.mode() === 'pages') {
+        <mat-paginator
+          [length]="store.total()"
+          [pageSize]="store.limit()"
+          [pageIndex]="store.page() - 1"
+          [pageSizeOptions]="pageSizeOptions"
+          [disabled]="store.loading()"
+          (page)="onPageChange($event)"
+          aria-label="Pagination de la bibliothèque"
+        />
+      } @else {
+        <div class="back-to-pages">
+          <button type="button" class="btn btn-sm" (click)="store.usePages()">
+            <app-icon name="queue" [size]="14" />
+            Revenir à l'affichage par pages
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+</div>
